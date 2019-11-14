@@ -1,0 +1,149 @@
+#!/bin/bash
+
+#!/bin/bash
+
+ARGS_ARRAY=("${@}")
+NUM_ARGS=${#ARGS_ARRAY[@]}
+THISDIR=$(dirname $(readlink -e ${BASH_SOURCE[0]}))
+THISPROG=$(basename $(readlink -e ${BASH_SOURCE[0]}))
+
+Syntax()
+{
+    set +x
+    echo ""
+    echo "SYNTAX:  $THISPROG  NUM_PANES"
+    echo ""
+    echo "Starts a tmux session with a specified number of panes."
+    echo "The number of panes supported are from 2 through 8."
+    echo ""
+    echo "Options:"
+    echo ""
+    echo "-n, --name NAME = name the session.  If not specified, no name is applied."
+    echo ""
+    echo ""
+    echo "EXAMPLE:  $THISPROG 8"
+    echo ""
+    exit 101
+}
+
+err()
+{
+    set +x
+    echo
+    echo "ERROR - $1"
+    echo
+    echo "Type '$THISPROG -h' for help."
+    echo
+    CODE="$2"
+    [ -z "$CODE" ] && CODE=1
+    exit $CODE
+}
+
+# Parse the arguments.
+numPanes=""
+sessionName=""
+for (( ix = 0; ix < ${NUM_ARGS}; ix++ )); do
+    arg="${ARGS_ARRAY[${ix}]}"
+    #echo "next arg = [ $arg ]"
+    [ ! -z "$arg" ] || err "Should not get here."
+    if [ "$arg" = "-h" -o "$arg" = "--help" ]; then
+        Syntax
+    elif [ "$arg" = "-n" -o "$arg" = "--name" ]; then
+        ((++ix))
+        nextarg="${ARGS_ARRAY[${ix}]}"
+        [ -n "$nextarg" -a "${nextarg:0:1}" != "-" ] || err "expected an argument after $arg."
+        sessionName="$nextarg"
+    else # a regular param
+        if [ -z "$numPanes" ]; then
+            numPanes=$arg
+        else
+            err "unexpected argument:  $arg"
+        fi
+    fi
+done
+
+# Required params:
+[ -n "$numPanes" ] || err "The numPanes was not specified."
+
+[ $numPanes -lt 2 ] && err "The number of panes should not be less than 2."
+[ $numPanes -gt 8 ] && err "More than 8 panes is not supported."
+
+nameOpt=""
+[[ -n $sessionName ]] && nameOpt="-s $sessionName"
+
+#echo "numPanes=$numPanes"
+#echo "sessionName='$sessionName'"
+#echo "nameOpt='$nameOpt'"
+
+if [[ $numPanes -eq 8 ]]; then
+
+    # start 8 panes
+    tmux new-session $nameOpt \; \
+        split-window -h \; \
+        split-window -v \; \
+        split-window -v \; \
+        select-pane -D \; \
+        split-window -v \; \
+        select-pane -L \; \
+        split-window -v \; \
+        split-window -v \; \
+        select-pane -D \; \
+        split-window -v \; \
+
+elif [[ $numPanes -eq 7 ]]; then
+
+    # start 7 panes
+    tmux new-session $nameOpt \; \
+        split-window -h \; \
+        split-window -v \; \
+        split-window -v \; \
+        select-pane -L \; \
+        split-window -v \; \
+        split-window -v \; \
+        select-pane -D \; \
+        split-window -v \; \
+
+elif [[ $numPanes -eq 6 ]]; then
+
+    # start 6 panes
+    tmux new-session $nameOpt \; \
+        split-window -h \; \
+        split-window -v \; \
+        split-window -v \; \
+        select-pane -L \; \
+        split-window -v \; \
+        split-window -v \; \
+
+elif [[ $numPanes -eq 5 ]]; then
+
+    # start 5 panes
+    tmux new-session $nameOpt \; \
+        split-window -h \; \
+        split-window -v \; \
+        select-pane -L \; \
+        split-window -v \; \
+        split-window -v \; \
+
+elif [[ $numPanes -eq 4 ]]; then
+
+    # start 4 panes
+    tmux new-session $nameOpt \; \
+        split-window -h \; \
+        split-window -v \; \
+        select-pane -L \; \
+        split-window -v \; \
+
+elif [[ $numPanes -eq 3 ]]; then
+
+    # start 3 panes
+    tmux new-session $nameOpt \; \
+        split-window -h \; \
+        split-window -v \; \
+
+elif [[ $numPanes -eq 2 ]]; then
+
+    # start 2 panes
+    tmux new-session $nameOpt \; \
+        split-window -h \; \
+
+fi
